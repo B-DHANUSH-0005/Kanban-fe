@@ -4,7 +4,9 @@
  */
 import { STORAGE_KEYS, PAGE_SIZE } from '../constants/config';
 
-/* ── Base fetch with JWT injection ────────────────────────── */
+/* ── API Configuration ───────────────────────────────────── */
+const BASE_URL = import.meta.env.NEXT_PUBLIC_API_BASE_URL || '';
+
 function getToken() {
   return localStorage.getItem(STORAGE_KEYS.TOKEN) || '';
 }
@@ -18,7 +20,7 @@ async function apiFetch(url, options = {}) {
   };
 
   try {
-    const res = await fetch(url, { ...options, headers });
+    const res = await fetch(`${BASE_URL}${url}`, { ...options, headers });
 
     // Handle 401 Unauthorized
     if (res.status === 401) {
@@ -51,7 +53,7 @@ async function apiFetch(url, options = {}) {
 /* ── Auth endpoints (no JWT needed for most) ───────────────── */
 export const authAPI = {
   async login(email_id, password) {
-    const res = await fetch('/auth/login', {
+    const res = await fetch(`${BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email_id, password }),
@@ -62,7 +64,7 @@ export const authAPI = {
   },
 
   async register(email_id, password) {
-    const res = await fetch('/auth/register', {
+    const res = await fetch(`${BASE_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email_id, password }),

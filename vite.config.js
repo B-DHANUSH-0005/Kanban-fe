@@ -3,12 +3,8 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
   server: {
     port: 5173,
-    proxy: {
-      '/auth': 'http://127.0.0.1:8000',
-      '/boards': 'http://127.0.0.1:8000',
-      '/tasks': 'http://127.0.0.1:8000',
-    },
   },
 })
