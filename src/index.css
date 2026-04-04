@@ -392,22 +392,18 @@ button, input, textarea {
 }
 
 .column-with-open-menu {
-  z-index: 2000 !important;
-}
-
-.column-with-open-menu .task-list {
-  overflow: visible !important;
+  z-index: 5000 !important;
 }
 
 .task-list {
   flex: 1;
   overflow-y: auto;
-  padding: 0 12px 60px; /* More bottom padding for dropdown menus */
+  padding: 0 12px 280px; /* Extreme bottom padding to allow even the very last task to scroll high enough for the menu */
   display: flex;
   flex-direction: column;
   gap: 12px;
   position: relative;
-  z-index: 1;
+  z-index: 10;
 }
 
 .column-footer {
@@ -497,25 +493,61 @@ button, input, textarea {
   background: #f9f9f9;
   border-radius: 6px;
   border-left: 3px solid var(--border-ash);
+  display: flex;
+  flex-direction: column;
+}
+
+.task-timestamp-footer {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-align: right;
+  margin-top: 8px;
+  font-weight: 300;
+  letter-spacing: 0.02em;
 }
 
 /* ── Menus ────────────────────────────────────────────── */
 
 /* Maps to original dropdown menu needs but with new component support */
-.menu-container { position: relative; }
+.menu-container, .task-menu-container { 
+  position: relative; 
+  display: flex;
+  align-items: center;
+}
+
+.menu-dots-btn {
+  padding: 4px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  transition: all 0.2s;
+}
+
+.menu-dots-btn:hover {
+  background: #f0f0f0;
+  color: var(--text-primary);
+}
 
 .dropdown-menu {
   position: absolute;
-  top: calc(100% + 4px);
+  top: 80%; /* Slightly overlap the dots to prevent mouse-leave gaps */
   right: 0;
-  z-index: 9999; /* Higher to avoid any clipping */
+  z-index: 6000;
   background: #fff;
   border-radius: 8px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.25);
   border: 1px solid var(--border);
   min-width: 200px;
   display: none;
   padding: 6px;
+  max-height: 420px;
+  overflow-y: auto;
 }
 
 .dropdown-menu.active { display: block; }
@@ -563,7 +595,7 @@ button, input, textarea {
   top: 0;
   left: 100%; /* Open to the right */
   margin-left: 6px;
-  z-index: 10000; /* Higher than main dropdown */
+  z-index: 5001; /* Higher than main dropdown */
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 10px 40px rgba(0,0,0,0.25);
@@ -571,6 +603,8 @@ button, input, textarea {
   min-width: 180px;
   display: none;
   padding: 6px;
+  max-height: 300px;
+  overflow-y: auto;
 }
 
 .submenu.show { display: block; }
@@ -621,6 +655,11 @@ button, input, textarea {
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--text-muted);
+}
+
+.required-asterisk {
+  color: var(--danger);
+  margin-left: 4px;
 }
 
 .password-wrapper {
@@ -1052,6 +1091,10 @@ button, input, textarea {
     padding: 0;
     background: #f9f9f9;
   }
+
+  .task-timestamp-footer {
+    font-size: 0.65rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1173,7 +1216,65 @@ button, input, textarea {
   min-height: 100px;
 }
 
-/* ── Forgot Password Polish ────────────────────────────── */
+/* ── Selection Modal (Move/Transfer) ────────────────────── */
+
+.selection-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 8px 4px;
+}
+
+.selection-item {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: left;
+}
+
+.selection-item:hover {
+  border-color: var(--border-ash);
+  background: #fdfdfd;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.selection-item:active {
+  transform: translateY(0);
+  background: #f8f8f8;
+}
+
+.selection-item svg {
+  opacity: 0.3;
+  transition: opacity 0.2s;
+}
+
+.selection-item:hover svg {
+  opacity: 1;
+}
+
+.selection-item-text {
+  flex: 1;
+}
+
+.selection-item.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
 
 .fp-instruction {
   margin-bottom: 24px;

@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+import { formatDateTime, parseUTCDate } from '../constants/config';
 
 const TaskCard = React.memo(({
   task,
@@ -59,40 +60,18 @@ const TaskCard = React.memo(({
                   </svg>
                 </div>
                 
-                <div className="submenu-container" onClick={(e) => { e.stopPropagation(); onToggleSubMenu(`move-${task.id}`); }}>
-                  <div className="menu-item">
-                    Move to
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="9 18 15 12 9 6"/>
-                    </svg>
-                  </div>
-                  {openSubMenuId === `move-${task.id}` && (
-                    <div className="submenu show">
-                      <div className="submenu-back" onClick={(e) => { e.stopPropagation(); onToggleSubMenu(null); }}>‹ Back</div>
-                      {columns.filter(s => s !== task.status).map(s => (
-                        <div key={s} className="menu-item" onClick={(e) => onMoveTask(task, s, e)}>{statusLabel(s)}</div>
-                      ))}
-                      {columns.length <= 1 && <div className="menu-item disabled">No other columns</div>}
-                    </div>
-                  )}
+                <div className="menu-item" onClick={(e) => { e.stopPropagation(); onToggleSubMenu(`move-${task.id}`); }}>
+                  Move to
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
                 </div>
                 
-                <div className="submenu-container" onClick={(e) => { e.stopPropagation(); onToggleSubMenu(`transfer-${task.id}`); }}>
-                  <div className="menu-item">
-                    Transfer
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="9 18 15 12 9 6"/>
-                    </svg>
-                  </div>
-                  {openSubMenuId === `transfer-${task.id}` && (
-                    <div className="submenu show">
-                      <div className="submenu-back" onClick={(e) => { e.stopPropagation(); onToggleSubMenu(null); }}>‹ Back</div>
-                      {allBoards.filter(b => b.id !== Number(boardId)).map(b => (
-                        <div key={b.id} className="menu-item" onClick={(e) => onTransferTask(task, b.id, b.name, e)}>{b.name}</div>
-                      ))}
-                      {allBoards.length <= 1 && <div className="menu-item disabled">No other boards</div>}
-                    </div>
-                  )}
+                <div className="menu-item" onClick={(e) => { e.stopPropagation(); onToggleSubMenu(`transfer-${task.id}`); }}>
+                  Transfer to Board
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
                 </div>
                 
                 <div className="menu-divider"></div>
@@ -107,7 +86,26 @@ const TaskCard = React.memo(({
           )}
         </div>
       </div>
-      {task.description && <div className="task-card-desc" style={{ marginTop: 8 }}>{task.description}</div>}
+      {task.description && (
+        <div className="task-card-desc" style={{ marginTop: 8 }}>
+          {task.description}
+          <div className="task-timestamp-footer">
+            {(() => {
+              const u = task.updated_at ? parseUTCDate(task.updated_at).getTime() : 0;
+              const m = task.moved_at ? parseUTCDate(task.moved_at).getTime() : 0;
+              
+              // Only show Edited/Moved if they actually exist (are non-zero)
+              if (u > 0 && u >= m) {
+                return `Edited at ${formatDateTime(task.updated_at)}`;
+              } else if (m > 0) {
+                return `Moved at ${formatDateTime(task.moved_at)}`;
+              }
+              
+              return `Created at ${formatDateTime(task.created_at)}`;
+            })()}
+          </div>
+        </div>
+      )}
     </article>
   );
 });

@@ -7,6 +7,7 @@ import BoardFormModal from '../components/BoardFormModal';
 import TaskFormModal from '../components/TaskFormModal';
 import Column from '../components/Column';
 import Spinner from '../components/Spinner';
+import SelectionModal from '../components/SelectionModal';
 
 const statusLabel = (s) => s.charAt(0).toUpperCase() + s.slice(1).replace(/-/g, ' ');
 
@@ -45,6 +46,13 @@ export default function BoardPage() {
   const [isEditingDesc, setIsEditingDesc] = useState(false);
   const [editedDesc, setEditedDesc] = useState('');
   const [saving, setSaving] = useState(false);
+  const [selectionModal, setSelectionModal] = useState({
+    isOpen: false,
+    type: null, // 'move' or 'transfer'
+    task: null,
+    title: '',
+    options: []
+  });
 
   // Drag & Drop
   const [draggedTaskId, setDraggedTaskId] = useState(null);
@@ -90,17 +98,33 @@ export default function BoardPage() {
   const handleSaveTask = async (data) => {
     setSaving(true);
     const isEdit = !!editingTask;
+    const taskId = editingTask?.id;
+    const previousTasks = [...tasks];
+    
+    // Optimistic UI Update for Edit
+    if (isEdit) {
+      const optimisticTask = { ...editingTask, ...data, updated_at: new Date().toISOString() };
+      updateTasksState(prev => prev.map(t => t.id === taskId ? optimisticTask : t));
+    }
+    
     setTaskModalOpen(false);
 
     try {
       const savedTask = isEdit
-        ? await tasksAPI.update(editingTask.id, data)
+        ? await tasksAPI.update(taskId, data)
         : await tasksAPI.create(boardId, data.title, data.description, data.status);
       
       showToast(isEdit ? 'Task updated' : 'Task added');
-      updateTasksState(prev => isEdit ? prev.map(t => t.id === savedTask.id ? savedTask : t) : [savedTask, ...prev]);
+      // Update with final server data (including potential message or server-side generated fields)
+      updateTasksState(prev => isEdit 
+        ? prev.map(t => t.id === savedTask.id ? savedTask : t) 
+        : [savedTask, ...prev]
+      );
+      setEditingTask(null);
     } catch (err) {
       showToast(err.message, true);
+      // Revert optimistic update on failure
+      if (isEdit) updateTasksState(previousTasks);
       setTaskModalOpen(true);
     } finally {
       setSaving(false);
@@ -121,11 +145,7 @@ export default function BoardPage() {
     await deleteTask(taskId);
   }, [deleteTask]);
 
-  const handleTransferTask = useCallback(async (task, targetBoardId, targetBoardName, e) => {
-    e?.stopPropagation();
-    setOpenMenuId(null);
-    setOpenSubMenuId(null);
-    
+  const handleTransferTask = useCallback(async (task, targetBoardId, targetBoardName) => {
     try {
       await tasksAPI.update(task.id, { board_id: targetBoardId });
       showSuccess(`Transferred to ${targetBoardName}`);
@@ -135,6 +155,54 @@ export default function BoardPage() {
       refresh();
     }
   }, [showSuccess, showToast, updateTasksState, refresh]);
+
+  const handleToggleMenu = useCallback((id, e) => {
+    e?.stopPropagation();
+    setOpenMenuId(prev => prev === id ? null : id);
+    setOpenSubMenuId(null);
+  }, []);
+
+  const handleOpenSelectionModal = useCallback((id, e) => {
+    e?.stopPropagation();
+    setOpenMenuId(null);
+    
+    const [type, taskId] = id.split('-');
+    const task = tasks.find(t => String(t.id) === String(taskId));
+    if (!task) return;
+
+    if (type === 'move') {
+      setSelectionModal({
+        isOpen: true,
+        type: 'move',
+        task,
+        title: 'Choose Column',
+        options: board.columns
+          .filter(s => s !== task.status)
+          .map(s => ({ id: s, name: statusLabel(s) }))
+      });
+    } else if (type === 'transfer') {
+      setSelectionModal({
+        isOpen: true,
+        type: 'transfer',
+        task,
+        title: 'Transfer to Board',
+        options: allBoards
+          .filter(b => b.id !== Number(boardId))
+          .map(b => ({ id: b.id, name: b.name }))
+      });
+    }
+  }, [tasks, board?.columns, allBoards, boardId]);
+
+  const handleSelectionAction = useCallback(async (optionId, optionName) => {
+    const { type, task } = selectionModal;
+    setSelectionModal(prev => ({ ...prev, isOpen: false }));
+    
+    if (type === 'move') {
+      moveTask(task, optionId);
+    } else if (type === 'transfer') {
+      await handleTransferTask(task, optionId, optionName);
+    }
+  }, [selectionModal, moveTask, handleTransferTask]);
 
   /* ── Board Handlers ─────────────────────────────────────── */
   const handleSaveBoardInfo = async (data) => {
@@ -352,8 +420,8 @@ export default function BoardPage() {
               onRenameKeyDown={(e, s, n) => e.key === 'Enter' ? commitColumnRename(s, n) : e.key === 'Escape' && setEditingColumn(null)}
               onAddTask={handleOpenNewTask}
               onEditTask={handleOpenEditTask}
-              onToggleMenu={setOpenMenuId}
-              onToggleSubMenu={setOpenSubMenuId}
+              onToggleMenu={handleToggleMenu}
+              onToggleSubMenu={handleOpenSelectionModal}
               onMoveTask={handleMoveTask}
               onTransferTask={handleTransferTask}
               onDeleteTask={handleDeleteTask}
@@ -388,6 +456,15 @@ export default function BoardPage() {
         initialData={board}
         onSubmit={handleSaveBoardInfo}
         loading={saving}
+      />
+
+      <SelectionModal
+        isOpen={selectionModal.isOpen}
+        onClose={() => setSelectionModal(prev => ({ ...prev, isOpen: false }))}
+        title={selectionModal.title}
+        options={selectionModal.options}
+        onSelect={handleSelectionAction}
+        emptyMessage={selectionModal.type === 'move' ? "No other columns available." : "No other boards available."}
       />
     </div>
   );

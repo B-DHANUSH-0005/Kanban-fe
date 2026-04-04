@@ -56,7 +56,7 @@ export default function BoardFormModal({
           <button
             className="btn btn-primary"
             onClick={handleSubmit}
-            disabled={loading}
+            disabled={loading || !boardName.trim() || !boardDesc.trim()}
             type="button"
           >
             {loading ? 'Saving…' : initialData ? 'Save Changes' : 'Create Board'}
@@ -66,7 +66,7 @@ export default function BoardFormModal({
     >
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label htmlFor="board-name">Board Name</label>
+          <label htmlFor="board-name">Board Name<span className="required-asterisk">*</span></label>
           <input
             id="board-name"
             type="text"
@@ -83,7 +83,7 @@ export default function BoardFormModal({
           {fieldErrors.name && <span className="field-error">{fieldErrors.name}</span>}
         </div>
         <div className="form-group">
-          <label htmlFor="board-desc">Description (optional)</label>
+          <label htmlFor="board-desc">Description<span className="required-asterisk">*</span></label>
           <textarea
             id="board-desc"
             className={`input textarea ${fieldErrors.desc ? 'input-error' : ''}`}

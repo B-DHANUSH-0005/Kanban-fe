@@ -122,14 +122,17 @@ export function useBoard(boardId) {
     const oldStatus = task.status;
     
     // Optimistic UI Update (Immediate)
-    updateTasksState(prev => prev.map(t => t.id === task.id ? { ...t, status: newStatus } : t));
+    const now = new Date().toISOString();
+    updateTasksState(prev => prev.map(t => t.id === task.id ? { ...t, status: newStatus, moved_at: now } : t));
     
     try {
-      await tasksAPI.move(task.id, newStatus);
+      const updatedTask = await tasksAPI.move(task.id, newStatus);
+      // Finalise UI with actual server data immediately, preventing background poller from rolling back if it fired during the request
+      updateTasksState(prev => prev.map(t => t.id === task.id ? { ...t, ...updatedTask } : t));
     } catch (err) {
       // Revert on failure
       showToast(err.message, true);
-      updateTasksState(prev => prev.map(t => t.id === task.id ? { ...t, status: oldStatus } : t));
+      updateTasksState(prev => prev.map(t => t.id === task.id ? { ...t, status: oldStatus, moved_at: task.moved_at } : t));
     }
   };
 

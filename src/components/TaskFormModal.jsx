@@ -63,7 +63,7 @@ export default function TaskFormModal({
       footer={
         <div className="modal-footer">
           <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
-          <button type="button" className="btn btn-primary" onClick={handleSubmit} disabled={loading}>
+          <button type="button" className="btn btn-primary" onClick={handleSubmit} disabled={loading || !taskTitle.trim() || !taskDesc.trim()}>
             {loading ? 'Saving…' : initialData ? 'Save Changes' : 'Add Task'}
           </button>
         </div>
@@ -71,7 +71,7 @@ export default function TaskFormModal({
     >
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label htmlFor="task-title">Title</label>
+          <label htmlFor="task-title">Title<span className="required-asterisk">*</span></label>
           <input
             id="task-title"
             type="text"
@@ -84,7 +84,7 @@ export default function TaskFormModal({
           {taskErrors.title && <span className="field-error">{taskErrors.title}</span>}
         </div>
         <div className="form-group">
-          <label htmlFor="task-desc">Description (optional)</label>
+          <label htmlFor="task-desc">Description<span className="required-asterisk">*</span></label>
           <textarea
             id="task-desc"
             className={`input textarea ${taskErrors.desc ? 'input-error' : ''}`}
